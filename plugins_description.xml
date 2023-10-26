@@ -1,0 +1,5 @@
+<library path="arc_rviz_plugins">
+    <class name="arc_rviz_plugin/CloseAll" type="arc_rviz_plugins::CloseAllTool" base_class_type="rviz_common::Tool">
+        <description>close all displays</description>
+    </class>
+</library>
