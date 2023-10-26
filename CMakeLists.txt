@@ -27,9 +27,12 @@ find_package(rviz_ogre_vendor REQUIRED)
 find_package(pluginlib REQUIRED)
 
 # -------------------------------------
+set(CMAKE_AUTOMOC ON)
+# -------------------------------------
 add_library(${PROJECT_NAME} SHARED
   src/close_all_tool.cpp
   src/open_all_tool.cpp
+  src/tf_trajectory_display.cpp
 )
 # -------------------------------------
 ament_target_dependencies(${PROJECT_NAME} 

@@ -6,4 +6,8 @@
     <class name="arc_rviz_plugin/OpenAll" type="arc_rviz_plugins::OpenAllTool" base_class_type="rviz_common::Tool">
         <description>open all displays</description>
     </class>
+
+    <class name="arc_rviz_plugin/TFTrajectory" type="arc_rviz_plugins::TFTrajectoryDisplay" base_class_type="rviz_common::Display">
+        <description>Display tf trajectory</description>
+    </class>
 </library>
