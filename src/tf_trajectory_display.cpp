@@ -30,6 +30,8 @@ namespace arc_rviz_plugins
 
     void TFTrajectoryDisplay::onInitialize()
     {
+        this->_nh = this->context_->getRosNodeAbstraction().lock()->get_raw_node();
+        
         frame_property_->setFrameManager(context_->getFrameManager());
         line_ = new rviz_rendering::BillboardLine(context_->getSceneManager(), scene_node_);
         updateFrame();
@@ -64,9 +66,12 @@ namespace arc_rviz_plugins
 
     void TFTrajectoryDisplay::update(float wall_dt, float ros_dt)
     {
-        
+
         (void)wall_dt;
         (void)ros_dt;
+
+        RCLCPP_INFO(_nh->get_logger(), "dt: %f, %f", wall_dt, ros_dt);
+
 
         if (frame_.empty())
         {
@@ -105,8 +110,7 @@ namespace arc_rviz_plugins
         new_point.point.z = position[2];
         trajectory_.push_back(new_point);
         // check old data, is it too slow??
-        for (std::vector<geometry_msgs::msg::PointStamped>::iterator it = trajectory_.begin();
-             it != trajectory_.end();)
+        for (std::vector<geometry_msgs::msg::PointStamped>::iterator it = trajectory_.begin(); it != trajectory_.end();)
         {
             rclcpp::Duration duration = now - it->header.stamp;
             if (duration.seconds() > duration_)

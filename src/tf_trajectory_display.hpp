@@ -43,6 +43,8 @@ namespace arc_rviz_plugins
         void updateDuration();
         void updateColor();
         void updateLineWidth();
+    private:
+        rclcpp::Node::SharedPtr _nh;
     };
 } // namespace arc_rviz_plugins
 
