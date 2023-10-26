@@ -25,6 +25,8 @@ find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 # -------------------------------------
 set(CMAKE_AUTOMOC ON)
@@ -39,6 +41,8 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp 
   rviz_common
   rviz_rendering
+  std_msgs
+  geometry_msgs
 )
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
