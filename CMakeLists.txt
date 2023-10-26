@@ -29,6 +29,7 @@ find_package(pluginlib REQUIRED)
 # -------------------------------------
 add_library(${PROJECT_NAME} SHARED
   src/close_all_tool.cpp
+  src/open_all_tool.cpp
 )
 # -------------------------------------
 ament_target_dependencies(${PROJECT_NAME} 

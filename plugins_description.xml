@@ -2,4 +2,8 @@
     <class name="arc_rviz_plugin/CloseAll" type="arc_rviz_plugins::CloseAllTool" base_class_type="rviz_common::Tool">
         <description>close all displays</description>
     </class>
+
+    <class name="arc_rviz_plugin/OpenAll" type="arc_rviz_plugins::OpenAllTool" base_class_type="rviz_common::Tool">
+        <description>open all displays</description>
+    </class>
 </library>
