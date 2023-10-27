@@ -1,8 +1,5 @@
 #include "tf_trajectory_display.hpp"
 
-#include <boost/format.hpp>
-#include <iomanip>
-
 // --------------------------------------------------------
 // console log macro
 // --------------------------------------------------------
@@ -19,25 +16,27 @@ namespace arc_rviz_plugins
 {
     TFTrajectoryDisplay::TFTrajectoryDisplay() : Display(), clock_(RCL_SYSTEM_TIME)
     {
-        frame_property_ = new rviz_common::properties::TfFrameProperty(
-            "frame", "", "frame to visualize trajectory", this, NULL, false, SLOT(updateFrame()));
-        duration_property_ = new rviz_common::properties::FloatProperty(
-            "duration", 10.0, "duration to visualize trajectory", this, SLOT(updateDuration()));
-        line_width_property_ = new rviz_common::properties::FloatProperty(
-            "line_width", 0.01, "line width", this, SLOT(updateLineWidth()));
-        color_property_ = new rviz_common::properties::ColorProperty(
-            "color", QColor(25, 255, 240), "color of trajectory", this, SLOT(updateColor()));
-        duration_property_->setMin(0.0);
-        line_width_property_->setMin(0.0);
+        this->frame_property_ = new rviz_common::properties::TfFrameProperty(
+            "Frame ID", "", "frame to visualize trajectory", this, NULL, false, SLOT(updateFrame()));
+            
+        this->duration_property_ = new rviz_common::properties::FloatProperty(
+            "Duration", 10.0, "duration to visualize trajectory", this, SLOT(updateDuration()));
+        this->duration_property_->setMin(0.0);
+
+        this->line_width_property_ = new rviz_common::properties::FloatProperty(
+            "Line Width", 0.01, "line width", this, SLOT(updateLineWidth()));
+        this->line_width_property_->setMin(0.0);
+
+        this->color_property_ = new rviz_common::properties::ColorProperty(
+            "Color", QColor(25, 255, 240), "color of trajectory", this, SLOT(updateColor()));
     }
 
     TFTrajectoryDisplay::~TFTrajectoryDisplay()
     {
-        delete line_width_property_;
+        // delete line_width_property_;
         delete frame_property_;
         delete duration_property_;
         delete color_property_;
-        delete line_;
     }
 
     void TFTrajectoryDisplay::onInitialize()
@@ -45,7 +44,10 @@ namespace arc_rviz_plugins
         this->rviz_node_ = this->context_->getRosNodeAbstraction().lock()->get_raw_node();
 
         frame_property_->setFrameManager(context_->getFrameManager());
-        line_ = new rviz_rendering::BillboardLine(context_->getSceneManager(), scene_node_);
+        this->line_ = std::make_shared<rviz_rendering::BillboardLine>(scene_manager_, scene_node_ );
+        this->axes_ = std::make_shared<rviz_rendering::Axes>(scene_manager_, scene_node_);
+        this->axes_->getSceneNode()->setVisible(isEnabled());
+
         updateFrame();
         updateDuration();
         updateColor();
@@ -124,23 +126,31 @@ namespace arc_rviz_plugins
         if (!context_->getFrameManager()->getTransform(header, position, orientation))
         {
             setStatus(rviz_common::properties::StatusProperty::Error,
-                      "transformation",
-                      QString("Failed transforming from frame %1 to frame %2")
+                      "TransFormation",
+                      QString("Failed transforming from frame <b>%1</b> to frame <b>%2</b>")
                           .arg(header.frame_id.c_str())
                           .arg(fixed_frame_id.c_str()));
 
+            deleteStatus("Trajectory");
             return;
         }
-        setStatus(rviz_common::properties::StatusProperty::Ok, "transformation", "Ok");
+        setStatus(rviz_common::properties::StatusProperty::Ok, "TransFormation", "Ok");
+        setStatus(rviz_common::properties::StatusProperty::Ok, "Trajectory", QString("size %1").arg(trajectory_.size()));
 
-        geometry_msgs::msg::PointStamped new_point;
-        new_point.header.stamp = now;
-        new_point.point.x = position[0];
-        new_point.point.y = position[1];
-        new_point.point.z = position[2];
-        trajectory_.push_back(new_point);
+        // geometry_msgs::msg::PointStamped new_point;
+        // new_point.header.stamp = now;
+        // new_point.point.x = position[0];
+        // new_point.point.y = position[1];
+        // new_point.point.z = position[2];
+
+        geometry_msgs::msg::PoseStamped new_pose;
+        new_pose.header.frame_id = fixed_frame_id;
+        new_pose.header.stamp = now;
+        this->updatePose(position, orientation, new_pose.pose);
+
+        trajectory_.push_back(new_pose);
         // check old data, is it too slow??
-        for (std::vector<geometry_msgs::msg::PointStamped>::iterator it = trajectory_.begin(); it != trajectory_.end();)
+        for (std::vector<geometry_msgs::msg::PoseStamped>::iterator it = trajectory_.begin(); it != trajectory_.end();)
         {
             rclcpp::Duration duration = now - it->header.stamp;
             if (duration.seconds() > duration_)
@@ -152,19 +162,33 @@ namespace arc_rviz_plugins
                 break;
             }
         }
+
         line_->clear();
         line_->setNumLines(1);
         line_->setMaxPointsPerLine(trajectory_.size());
         line_->setLineWidth(line_width_);
         line_->setColor(color_.red() * 255.0, color_.green() * 255.0, color_.blue() * 255.0, 255.0);
-        for (size_t i = 0; i < trajectory_.size(); i++)
+
+        for (const auto &pose_stamp : trajectory_)
         {
             Ogre::Vector3 p;
-            p[0] = trajectory_[i].point.x;
-            p[1] = trajectory_[i].point.y;
-            p[2] = trajectory_[i].point.z;
+            p[0] = pose_stamp.pose.position.x;
+            p[1] = pose_stamp.pose.position.y;
+            p[2] = pose_stamp.pose.position.z;
             line_->addPoint(p);
         }
+    }
+
+    void TFTrajectoryDisplay::updatePose(Ogre::Vector3 position, Ogre::Quaternion orientation, geometry_msgs::msg::Pose &pose)
+    {
+        pose.position.x = position.x;
+        pose.position.y = position.y;
+        pose.position.z = position.z;
+
+        pose.orientation.x = orientation.x;        
+        pose.orientation.y = orientation.y;           
+        pose.orientation.z = orientation.z;            
+        pose.orientation.w = orientation.w;          
     }
 } // namespace arc_rviz_plugins
 

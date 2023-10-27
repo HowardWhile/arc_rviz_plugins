@@ -9,6 +9,7 @@
 #include <rviz_common/properties/tf_frame_property.hpp>
 #include <rviz_common/ros_topic_display.hpp>
 #include <rviz_rendering/objects/billboard_line.hpp>
+#include <rviz_rendering/objects/axes.hpp>
 #endif
 
 namespace arc_rviz_plugins
@@ -31,7 +32,6 @@ namespace arc_rviz_plugins
         void reset() override;
         // -------------------------------------------------------
         // -------------------------------------------------------
-        rviz_rendering::BillboardLine *line_;
         
         std::string frame_;
         std::string fixed_frame_;
@@ -55,7 +55,15 @@ namespace arc_rviz_plugins
         // -------------------------------------------------------
         rclcpp::Node::SharedPtr rviz_node_; // ros node handler
         // -------------------------------------------------------
-        std::vector<geometry_msgs::msg::PointStamped> trajectory_;
+        std::vector<geometry_msgs::msg::PoseStamped> trajectory_;
+        std::shared_ptr<rviz_rendering::BillboardLine> line_;
+        std::shared_ptr<rviz_rendering::Axes> axes_;
+
+        // -------------------------------------------------------
+        void updatePose(Ogre::Vector3 position, Ogre::Quaternion orientation, geometry_msgs::msg::Pose &pose);
+
+        // -------------------------------------------------------
+
     };
 } // namespace arc_rviz_plugins
 
