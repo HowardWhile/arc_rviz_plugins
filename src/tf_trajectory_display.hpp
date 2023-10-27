@@ -21,17 +21,18 @@ namespace arc_rviz_plugins
         ~TFTrajectoryDisplay();
 
     protected:
+        // -------------------------------------------------------
+        // override rviz_common::Display event
+        // -------------------------------------------------------
         void onInitialize() override;
         void onEnable() override;
         void onDisable() override;
         void update(float wall_dt, float ros_dt) override;
-
-        rviz_common::properties::TfFrameProperty *frame_property_;
-        rviz_common::properties::FloatProperty *duration_property_;
-        rviz_common::properties::ColorProperty *color_property_;
-        rviz_common::properties::FloatProperty *line_width_property_;
+        void reset() override;
+        // -------------------------------------------------------
+        // -------------------------------------------------------
         rviz_rendering::BillboardLine *line_;
-        std::vector<geometry_msgs::msg::PointStamped> trajectory_;
+        
         std::string frame_;
         std::string fixed_frame_;
         float duration_;
@@ -44,7 +45,17 @@ namespace arc_rviz_plugins
         void updateColor();
         void updateLineWidth();
     private:
-        rclcpp::Node::SharedPtr _nh;
+        // -------------------------------------------------------            
+        // User-editable property variables.
+        // -------------------------------------------------------
+        rviz_common::properties::TfFrameProperty *frame_property_;
+        rviz_common::properties::FloatProperty *duration_property_;
+        rviz_common::properties::ColorProperty *color_property_;
+        rviz_common::properties::FloatProperty *line_width_property_;
+        // -------------------------------------------------------
+        rclcpp::Node::SharedPtr rviz_node_; // ros node handler
+        // -------------------------------------------------------
+        std::vector<geometry_msgs::msg::PointStamped> trajectory_;
     };
 } // namespace arc_rviz_plugins
 
