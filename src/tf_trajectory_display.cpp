@@ -60,7 +60,7 @@ namespace arc_rviz_plugins
 
         // 創建線的材質
         static int count = 0;
-        std::string material_name = "LinesMaterial" + std::to_string(count++);
+        std::string material_name = "arc_rviz_plugins::TFTrajectoryDisplay/LinesMaterial" + std::to_string(count++); // 材質名稱不能重複
         this->manual_line_material_ = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
 
         updateFrame();
