@@ -1,5 +1,7 @@
 #include "tf_trajectory_display.hpp"
 
+#include <rviz_common/msg_conversions.hpp> // rviz_common::pointMsgToOgre
+
 // --------------------------------------------------------
 // console log macro
 // --------------------------------------------------------
@@ -23,12 +25,22 @@ namespace arc_rviz_plugins
             "Duration", 10.0, "duration to visualize trajectory", this, SLOT(updateDuration()));
         this->duration_property_->setMin(0.0);
 
+        this->line_style_property_ = new rviz_common::properties::EnumProperty(
+            "Line Style", "Billboards", "The rendering operation to use to draw the grid lines.",
+            this, SLOT(updateStyle()));
+        this->line_style_property_->addOption("Lines", LINE);
+        this->line_style_property_->addOption("Billboards", BILLBOARD);
+
         this->line_width_property_ = new rviz_common::properties::FloatProperty(
             "Line Width", 0.01, "line width", this, SLOT(updateLineWidth()));
         this->line_width_property_->setMin(0.0);
 
-        this->color_property_ = new rviz_common::properties::ColorProperty(
-            "Color", QColor(25, 255, 240), "color of trajectory", this, SLOT(updateColor()));
+        this->line_color_property_ = new rviz_common::properties::ColorProperty(
+            "Line Color", QColor(25, 255, 240), "color of trajectory", this, SLOT(updateColor()));
+
+        static int count = 0;
+        std::string material_name = "LinesMaterial" + std::to_string(count++);
+        this->manual_line_material_ = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
     }
 
     TFTrajectoryDisplay::~TFTrajectoryDisplay()
@@ -36,7 +48,7 @@ namespace arc_rviz_plugins
         // delete line_width_property_;
         delete frame_property_;
         delete duration_property_;
-        delete color_property_;
+        delete line_color_property_;
     }
 
     void TFTrajectoryDisplay::onInitialize()
@@ -44,14 +56,17 @@ namespace arc_rviz_plugins
         this->rviz_node_ = this->context_->getRosNodeAbstraction().lock()->get_raw_node();
 
         frame_property_->setFrameManager(context_->getFrameManager());
-        this->line_ = std::make_shared<rviz_rendering::BillboardLine>(scene_manager_, scene_node_ );
-        this->axes_ = std::make_shared<rviz_rendering::Axes>(scene_manager_, scene_node_);
-        this->axes_->getSceneNode()->setVisible(isEnabled());
+        this->billboard_line_ = std::make_shared<rviz_rendering::BillboardLine>(scene_manager_, scene_node_ );
+
+        this->manual_line_ = this->scene_manager_->createManualObject();
+        this->scene_node_->attachObject(this->manual_line_);
 
         updateFrame();
         updateDuration();
+        updateStyle();
         updateColor();
         updateLineWidth();
+        
     }
 
     void TFTrajectoryDisplay::updateFrame()
@@ -70,9 +85,23 @@ namespace arc_rviz_plugins
         duration_ = duration_property_->getFloat();
     }
 
+    void TFTrajectoryDisplay::updateStyle()
+    {
+        auto style = static_cast<LineStyle>(line_style_property_->getOptionInt());
+
+        if (style == BILLBOARD)
+        {
+            this->line_width_property_->show();
+        }
+        else
+        {
+            this->line_width_property_->hide();
+        }
+    }
+
     void TFTrajectoryDisplay::updateColor()
     {
-        color_ = color_property_->getColor();
+        color_ = line_color_property_->getColor();
     }
 
     void TFTrajectoryDisplay::updateLineWidth()
@@ -83,14 +112,14 @@ namespace arc_rviz_plugins
     void TFTrajectoryDisplay::onEnable()
     {
         // console("[onEnable]");
-        line_->clear();
+        billboard_line_->clear();
         trajectory_.clear();
     }
 
     void TFTrajectoryDisplay::onDisable()
     {
         // console("[onDisable]");
-        line_->clear();
+        billboard_line_->clear();
         trajectory_.clear();
     }
 
@@ -109,7 +138,7 @@ namespace arc_rviz_plugins
         if (fixed_frame_ != fixed_frame_id)
         {
             fixed_frame_ = fixed_frame_id;
-            line_->clear();
+            billboard_line_->clear();
             trajectory_.clear();
             return;
         }
@@ -137,11 +166,6 @@ namespace arc_rviz_plugins
         setStatus(rviz_common::properties::StatusProperty::Ok, "TransFormation", "Ok");
         setStatus(rviz_common::properties::StatusProperty::Ok, "Trajectory", QString("size %1").arg(trajectory_.size()));
 
-        // geometry_msgs::msg::PointStamped new_point;
-        // new_point.header.stamp = now;
-        // new_point.point.x = position[0];
-        // new_point.point.y = position[1];
-        // new_point.point.z = position[2];
 
         geometry_msgs::msg::PoseStamped new_pose;
         new_pose.header.frame_id = fixed_frame_id;
@@ -163,19 +187,43 @@ namespace arc_rviz_plugins
             }
         }
 
-        line_->clear();
-        line_->setNumLines(1);
-        line_->setMaxPointsPerLine(trajectory_.size());
-        line_->setLineWidth(line_width_);
-        line_->setColor(color_.red() * 255.0, color_.green() * 255.0, color_.blue() * 255.0, 255.0);
+        this->billboard_line_->clear();
+        this->manual_line_->clear();
 
-        for (const auto &pose_stamp : trajectory_)
+        auto style = static_cast<LineStyle>(this->line_style_property_->getOptionInt());
+        switch (style)
         {
-            Ogre::Vector3 p;
-            p[0] = pose_stamp.pose.position.x;
-            p[1] = pose_stamp.pose.position.y;
-            p[2] = pose_stamp.pose.position.z;
-            line_->addPoint(p);
+        case LINE: // simple lines with fixed width of 1px
+        {
+            this->manual_line_->estimateVertexCount(trajectory_.size());
+            
+            this->manual_line_->begin(this->manual_line_material_->getName(), Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
+            auto o_color = this->line_color_property_->getOgreColor();
+            for (const auto &pose_stamp : trajectory_)
+            {
+                this->manual_line_->position(rviz_common::pointMsgToOgre(pose_stamp.pose.position));
+                rviz_rendering::MaterialManager::enableAlphaBlending(this->manual_line_material_, o_color.a);
+                this->manual_line_->colour(o_color);
+            }
+            this->manual_line_->end();
+            break;
+        }
+
+        case BILLBOARD: // billboards with configurable width
+            billboard_line_->setNumLines(1);
+            billboard_line_->setMaxPointsPerLine(trajectory_.size());
+            billboard_line_->setLineWidth(line_width_);
+            billboard_line_->setColor(color_.red() * 255.0, color_.green() * 255.0, color_.blue() * 255.0, 255.0);
+
+            for (const auto &pose_stamp : trajectory_)
+            {
+                Ogre::Vector3 p;
+                p[0] = pose_stamp.pose.position.x;
+                p[1] = pose_stamp.pose.position.y;
+                p[2] = pose_stamp.pose.position.z;
+                billboard_line_->addPoint(p);
+            }
+            break;
         }
     }
 

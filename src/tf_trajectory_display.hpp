@@ -7,9 +7,11 @@
 #include <rviz_common/properties/float_property.hpp>
 #include <rviz_common/properties/status_property.hpp>
 #include <rviz_common/properties/tf_frame_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/ros_topic_display.hpp>
 #include <rviz_rendering/objects/billboard_line.hpp>
 #include <rviz_rendering/objects/axes.hpp>
+#include "rviz_rendering/material_manager.hpp"
 #endif
 
 namespace arc_rviz_plugins
@@ -42,6 +44,7 @@ namespace arc_rviz_plugins
     protected Q_SLOTS:
         void updateFrame();
         void updateDuration();
+        void updateStyle();
         void updateColor();
         void updateLineWidth();
     private:
@@ -50,14 +53,25 @@ namespace arc_rviz_plugins
         // -------------------------------------------------------
         rviz_common::properties::TfFrameProperty *frame_property_;
         rviz_common::properties::FloatProperty *duration_property_;
-        rviz_common::properties::ColorProperty *color_property_;
+
+        // line style
+        rviz_common::properties::EnumProperty * line_style_property_;
+        rviz_common::properties::ColorProperty *line_color_property_;
         rviz_common::properties::FloatProperty *line_width_property_;
+        enum LineStyle
+        {
+            LINE,
+            BILLBOARD
+        };
+        
         // -------------------------------------------------------
         rclcpp::Node::SharedPtr rviz_node_; // ros node handler
         // -------------------------------------------------------
         std::vector<geometry_msgs::msg::PoseStamped> trajectory_;
-        std::shared_ptr<rviz_rendering::BillboardLine> line_;
-        std::shared_ptr<rviz_rendering::Axes> axes_;
+        std::shared_ptr<rviz_rendering::BillboardLine> billboard_line_;
+        Ogre::ManualObject* manual_line_;
+        Ogre::MaterialPtr manual_line_material_;
+
 
         // -------------------------------------------------------
         void updatePose(Ogre::Vector3 position, Ogre::Quaternion orientation, geometry_msgs::msg::Pose &pose);
