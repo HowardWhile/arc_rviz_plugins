@@ -20,7 +20,7 @@ namespace arc_rviz_plugins
     {
         this->frame_property_ = new rviz_common::properties::TfFrameProperty(
             "Frame ID", "", "frame to visualize trajectory", this, NULL, false, SLOT(updateFrame()));
-            
+
         this->duration_property_ = new rviz_common::properties::FloatProperty(
             "Duration", 10.0, "duration to visualize trajectory", this, SLOT(updateDuration()));
         this->duration_property_->setMin(0.0);
@@ -37,10 +37,6 @@ namespace arc_rviz_plugins
 
         this->line_color_property_ = new rviz_common::properties::ColorProperty(
             "Line Color", QColor(25, 255, 240), "color of trajectory", this, SLOT(updateColor()));
-
-        static int count = 0;
-        std::string material_name = "LinesMaterial" + std::to_string(count++);
-        this->manual_line_material_ = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
     }
 
     TFTrajectoryDisplay::~TFTrajectoryDisplay()
@@ -56,17 +52,22 @@ namespace arc_rviz_plugins
         this->rviz_node_ = this->context_->getRosNodeAbstraction().lock()->get_raw_node();
 
         frame_property_->setFrameManager(context_->getFrameManager());
-        this->billboard_line_ = std::make_shared<rviz_rendering::BillboardLine>(scene_manager_, scene_node_ );
+        this->billboard_line_ = std::make_shared<rviz_rendering::BillboardLine>(scene_manager_, scene_node_);
 
-        this->manual_line_ = this->scene_manager_->createManualObject();
-        this->scene_node_->attachObject(this->manual_line_);
+        // manual line initial
+        this->manual_line_ = this->scene_manager_->createManualObject(); // 創建對象
+        this->scene_node_->attachObject(this->manual_line_);             // 將對象附加到場景節點
+
+        // 創建線的材質
+        static int count = 0;
+        std::string material_name = "LinesMaterial" + std::to_string(count++);
+        this->manual_line_material_ = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
 
         updateFrame();
         updateDuration();
         updateStyle();
         updateColor();
         updateLineWidth();
-        
     }
 
     void TFTrajectoryDisplay::updateFrame()
@@ -166,7 +167,6 @@ namespace arc_rviz_plugins
         setStatus(rviz_common::properties::StatusProperty::Ok, "TransFormation", "Ok");
         setStatus(rviz_common::properties::StatusProperty::Ok, "Trajectory", QString("size %1").arg(trajectory_.size()));
 
-
         geometry_msgs::msg::PoseStamped new_pose;
         new_pose.header.frame_id = fixed_frame_id;
         new_pose.header.stamp = now;
@@ -196,15 +196,18 @@ namespace arc_rviz_plugins
         case LINE: // simple lines with fixed width of 1px
         {
             this->manual_line_->estimateVertexCount(trajectory_.size());
-            
+
+            // 開始繪圖
             this->manual_line_->begin(this->manual_line_material_->getName(), Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
-            auto o_color = this->line_color_property_->getOgreColor();
+            auto tmp_color = this->line_color_property_->getOgreColor();
             for (const auto &pose_stamp : trajectory_)
             {
+                // 添加線段的頂點
                 this->manual_line_->position(rviz_common::pointMsgToOgre(pose_stamp.pose.position));
-                rviz_rendering::MaterialManager::enableAlphaBlending(this->manual_line_material_, o_color.a);
-                this->manual_line_->colour(o_color);
+                rviz_rendering::MaterialManager::enableAlphaBlending(this->manual_line_material_, tmp_color.a);
+                this->manual_line_->colour(tmp_color);
             }
+            // 結束繪圖
             this->manual_line_->end();
             break;
         }
@@ -233,10 +236,10 @@ namespace arc_rviz_plugins
         pose.position.y = position.y;
         pose.position.z = position.z;
 
-        pose.orientation.x = orientation.x;        
-        pose.orientation.y = orientation.y;           
-        pose.orientation.z = orientation.z;            
-        pose.orientation.w = orientation.w;          
+        pose.orientation.x = orientation.x;
+        pose.orientation.y = orientation.y;
+        pose.orientation.z = orientation.z;
+        pose.orientation.w = orientation.w;
     }
 } // namespace arc_rviz_plugins
 
