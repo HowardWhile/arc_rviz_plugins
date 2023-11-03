@@ -36,13 +36,12 @@ namespace arc_rviz_plugins
         void update(float wall_dt, float ros_dt) override;
         void reset() override;
         // -------------------------------------------------------
-        // -------------------------------------------------------
-        
         std::string frame_;
         std::string fixed_frame_;
         float duration_;
-        QColor color_;
+        QColor line_color_;
         float line_width_;
+
         rclcpp::Clock clock_;
     protected Q_SLOTS:
         void updateFrame();
@@ -54,16 +53,17 @@ namespace arc_rviz_plugins
         void updatePoseAxisGeometry();
         void updatePoseArrowColor();
         void updatePoseArrowGeometry();
+        void updatePoseArrowDirection();
 
     private:
-        // -------------------------------------------------------            
+        // -------------------------------------------------------
         // User-editable property variables.
         // -------------------------------------------------------
         rviz_common::properties::TfFrameProperty *frame_property_;
         rviz_common::properties::FloatProperty *duration_property_;
 
         // line style
-        rviz_common::properties::EnumProperty * line_style_property_;
+        rviz_common::properties::EnumProperty *line_style_property_;
         rviz_common::properties::ColorProperty *line_color_property_;
         rviz_common::properties::FloatProperty *line_width_property_;
         enum LineStyle
@@ -81,12 +81,21 @@ namespace arc_rviz_plugins
         rviz_common::properties::FloatProperty *pose_arrow_head_length_property_;
         rviz_common::properties::FloatProperty *pose_arrow_shaft_diameter_property_;
         rviz_common::properties::FloatProperty *pose_arrow_head_diameter_property_;
-
+        rviz_common::properties::EnumProperty *pose_arrow_direction_property_;
         enum PoseStyle
         {
             NONE,
             AXES,
             ARROWS,
+        };
+        enum ArrowDirection
+        {
+            DIR_PX,
+            DIR_PY,
+            DIR_PZ,
+            DIR_NX,
+            DIR_NY,
+            DIR_NZ
         };
 
         // -------------------------------------------------------
@@ -95,17 +104,18 @@ namespace arc_rviz_plugins
         std::vector<geometry_msgs::msg::PoseStamped> trajectory_;
         // line style
         std::shared_ptr<rviz_rendering::BillboardLine> billboard_line_;
-        Ogre::ManualObject* manual_line_;
+        Ogre::ManualObject *manual_line_;
         Ogre::MaterialPtr manual_line_material_;
         // pose style
         std::vector<rviz_rendering::Axes *> axes_list_;
         std::vector<rviz_rendering::Arrow *> arrow_list_;
-        void allocateAxesVector(std::vector<rviz_rendering::Axes *> & axes_vect, size_t num);
-        void allocateArrowVector(std::vector<rviz_rendering::Arrow *> & arrow_vect, size_t num);
+        void allocateAxesVector(std::vector<rviz_rendering::Axes *> &axes_vect, size_t num);
+        void allocateArrowVector(std::vector<rviz_rendering::Arrow *> &arrow_vect, size_t num);
+        Ogre::ColourValue arrow_color_;
+        Ogre::Vector3 arrow_direction_;
         // -------------------------------------------------------
         void updatePose(Ogre::Vector3 position, Ogre::Quaternion orientation, geometry_msgs::msg::Pose &pose);
         // -------------------------------------------------------
-
     };
 } // namespace arc_rviz_plugins
 

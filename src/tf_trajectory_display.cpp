@@ -47,42 +47,54 @@ namespace arc_rviz_plugins
         pose_style_property_->addOption("Arrows", ARROWS);
 
         pose_axes_length_property_ = new rviz_common::properties::FloatProperty(
-            "Length", 0.3f,
+            "Length", 0.05f,
             "Length of the axes.",
             this, SLOT(updatePoseAxisGeometry()));
         pose_axes_radius_property_ = new rviz_common::properties::FloatProperty(
-            "Radius", 0.03f,
+            "Radius", 0.02f,
             "Radius of the axes.",
             this, SLOT(updatePoseAxisGeometry()));
 
         pose_arrow_color_property_ = new rviz_common::properties::ColorProperty(
             "Pose Color",
-            QColor(255, 85, 255),
+            QColor(249, 240, 107),
             "Color to draw the poses.",
             this, SLOT(updatePoseArrowColor()));
         pose_arrow_shaft_length_property_ = new rviz_common::properties::FloatProperty(
             "Shaft Length",
-            0.1f,
+            0.2f,
             "Length of the arrow shaft.",
             this,
             SLOT(updatePoseArrowGeometry()));
         pose_arrow_head_length_property_ = new rviz_common::properties::FloatProperty(
-            "Head Length", 0.2f,
+            "Head Length", 0.1f,
             "Length of the arrow head.",
             this,
             SLOT(updatePoseArrowGeometry()));
         pose_arrow_shaft_diameter_property_ = new rviz_common::properties::FloatProperty(
             "Shaft Diameter",
-            0.1f,
+            0.05f,
             "Diameter of the arrow shaft.",
             this,
             SLOT(updatePoseArrowGeometry()));
         pose_arrow_head_diameter_property_ = new rviz_common::properties::FloatProperty(
             "Head Diameter",
-            0.3f,
+            0.1f,
             "Diameter of the arrow head.",
             this,
             SLOT(updatePoseArrowGeometry()));
+
+        pose_arrow_direction_property_ = new rviz_common::properties::EnumProperty(
+            "Arrow Direction", "+Z",
+            "The direction of the arrow reference.",
+            this, SLOT(updatePoseArrowDirection()));
+        pose_arrow_direction_property_->addOption("+X", DIR_PX);
+        pose_arrow_direction_property_->addOption("+Y", DIR_PY);
+        pose_arrow_direction_property_->addOption("+Z", DIR_PZ);
+        pose_arrow_direction_property_->addOption("-X", DIR_NX);
+        pose_arrow_direction_property_->addOption("-Y", DIR_NY);
+        pose_arrow_direction_property_->addOption("-Z", DIR_NZ);
+
         pose_axes_length_property_->hide();
         pose_axes_radius_property_->hide();
         pose_arrow_color_property_->hide();
@@ -90,6 +102,7 @@ namespace arc_rviz_plugins
         pose_arrow_head_length_property_->hide();
         pose_arrow_shaft_diameter_property_->hide();
         pose_arrow_head_diameter_property_->hide();
+        pose_arrow_direction_property_->hide();
     }
 
     TFTrajectoryDisplay::~TFTrajectoryDisplay()
@@ -121,6 +134,11 @@ namespace arc_rviz_plugins
         updateStyle();
         updateColor();
         updateLineWidth();
+        updatePoseStyle();
+        updatePoseArrowColor();
+        updatePoseArrowGeometry();
+        updatePoseAxisGeometry();
+        updatePoseArrowDirection();
     }
 
     void TFTrajectoryDisplay::updateFrame()
@@ -155,7 +173,7 @@ namespace arc_rviz_plugins
 
     void TFTrajectoryDisplay::updateColor()
     {
-        color_ = line_color_property_->getColor();
+        line_color_ = line_color_property_->getColor();
     }
 
     void TFTrajectoryDisplay::updateLineWidth()
@@ -176,6 +194,7 @@ namespace arc_rviz_plugins
             pose_arrow_head_length_property_->hide();
             pose_arrow_shaft_diameter_property_->hide();
             pose_arrow_head_diameter_property_->hide();
+            pose_arrow_direction_property_->hide();
             break;
         case ARROWS:
             pose_axes_length_property_->hide();
@@ -185,6 +204,7 @@ namespace arc_rviz_plugins
             pose_arrow_head_length_property_->show();
             pose_arrow_shaft_diameter_property_->show();
             pose_arrow_head_diameter_property_->show();
+            pose_arrow_direction_property_->show();
             break;
         default:
             pose_axes_length_property_->hide();
@@ -194,16 +214,46 @@ namespace arc_rviz_plugins
             pose_arrow_head_length_property_->hide();
             pose_arrow_shaft_diameter_property_->hide();
             pose_arrow_head_diameter_property_->hide();
+            pose_arrow_direction_property_->hide();
         }
     }
     void TFTrajectoryDisplay::updatePoseAxisGeometry()
     {
     }
+
     void TFTrajectoryDisplay::updatePoseArrowColor()
     {
+        this->arrow_color_ = this->pose_arrow_color_property_->getOgreColor();
     }
+
     void TFTrajectoryDisplay::updatePoseArrowGeometry()
     {
+    }
+
+    void TFTrajectoryDisplay::updatePoseArrowDirection()
+    {
+        auto arrow_direction = static_cast<ArrowDirection>(this->pose_arrow_direction_property_->getOptionInt());
+        switch (arrow_direction)
+        {
+        case DIR_PX:
+            this->arrow_direction_ = Ogre::Vector3(1, 0, 0);
+            break;
+        case DIR_PY:
+            this->arrow_direction_ = Ogre::Vector3(0, 1, 0);
+            break;
+        case DIR_PZ:
+            this->arrow_direction_ = Ogre::Vector3(0, 0, 1);
+            break;
+        case DIR_NX:
+            this->arrow_direction_ = Ogre::Vector3(-1, 0, 0);
+            break;
+        case DIR_NY:
+            this->arrow_direction_ = Ogre::Vector3(0, -1, 0);
+            break;
+        case DIR_NZ:
+            this->arrow_direction_ = Ogre::Vector3(0, 0, -1);
+            break;
+        }
     }
 
     void TFTrajectoryDisplay::onEnable()
@@ -319,7 +369,7 @@ namespace arc_rviz_plugins
             billboard_line_->setNumLines(1);
             billboard_line_->setMaxPointsPerLine(trajectory_.size());
             billboard_line_->setLineWidth(line_width_);
-            billboard_line_->setColor(color_.red() * 255.0, color_.green() * 255.0, color_.blue() * 255.0, 255.0);
+            billboard_line_->setColor(line_color_.red() * 255.0, line_color_.green() * 255.0, line_color_.blue() * 255.0, 255.0);
 
             for (const auto &pose_stamp : trajectory_)
             {
@@ -360,6 +410,19 @@ namespace arc_rviz_plugins
         }
         break;
         case ARROWS:
+            auto num = this->trajectory_.size();
+            this->allocateArrowVector(this->arrow_list_, num);
+            for (size_t idx = 0; idx < num; ++idx)
+            {
+                // update position
+                this->arrow_list_[idx]->setPosition(rviz_common::pointMsgToOgre(this->trajectory_[idx].pose.position));
+
+                // update direction
+                Ogre::Quaternion orientation(rviz_common::quaternionMsgToOgre(this->trajectory_[idx].pose.orientation));
+                Ogre::Vector3 direction = orientation * this->arrow_direction_;
+                this->arrow_list_[idx]->setDirection(direction);
+            }
+
             break;
         }
     }
@@ -397,7 +460,15 @@ namespace arc_rviz_plugins
             arrow_vect.reserve(num);
             for (auto i = vector_size; i < num; ++i)
             {
-                arrow_vect.push_back(new rviz_rendering::Arrow(scene_manager_, scene_node_));
+                auto arrow = new rviz_rendering::Arrow(scene_manager_, scene_node_,
+                                                       this->pose_arrow_shaft_length_property_->getFloat(),
+                                                       this->pose_arrow_shaft_diameter_property_->getFloat(),
+                                                       this->pose_arrow_head_length_property_->getFloat(),
+                                                       this->pose_arrow_head_diameter_property_->getFloat());
+
+                arrow->setColor(this->arrow_color_);
+
+                arrow_vect.push_back(arrow);
             }
         }
         else if (num < vector_size)
