@@ -2,6 +2,7 @@
 #define ARC_RVIZ_PLUGINS_TF_TRAJECTORY_DISPLAY_H_
 
 #ifndef Q_MOC_RUN
+#include <vector>
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <rviz_common/properties/color_property.hpp>
 #include <rviz_common/properties/float_property.hpp>
@@ -10,8 +11,10 @@
 #include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/ros_topic_display.hpp>
 #include <rviz_rendering/objects/billboard_line.hpp>
-#include <rviz_rendering/objects/axes.hpp>
 #include "rviz_rendering/material_manager.hpp"
+#include <rviz_rendering/objects/axes.hpp>
+#include <rviz_rendering/objects/arrow.hpp>
+
 #endif
 
 namespace arc_rviz_plugins
@@ -47,6 +50,11 @@ namespace arc_rviz_plugins
         void updateStyle();
         void updateColor();
         void updateLineWidth();
+        void updatePoseStyle();
+        void updatePoseAxisGeometry();
+        void updatePoseArrowColor();
+        void updatePoseArrowGeometry();
+
     private:
         // -------------------------------------------------------            
         // User-editable property variables.
@@ -63,19 +71,39 @@ namespace arc_rviz_plugins
             LINE,
             BILLBOARD
         };
-        
+
+        // pose marker property
+        rviz_common::properties::EnumProperty *pose_style_property_;
+        rviz_common::properties::FloatProperty *pose_axes_length_property_;
+        rviz_common::properties::FloatProperty *pose_axes_radius_property_;
+        rviz_common::properties::ColorProperty *pose_arrow_color_property_;
+        rviz_common::properties::FloatProperty *pose_arrow_shaft_length_property_;
+        rviz_common::properties::FloatProperty *pose_arrow_head_length_property_;
+        rviz_common::properties::FloatProperty *pose_arrow_shaft_diameter_property_;
+        rviz_common::properties::FloatProperty *pose_arrow_head_diameter_property_;
+
+        enum PoseStyle
+        {
+            NONE,
+            AXES,
+            ARROWS,
+        };
+
         // -------------------------------------------------------
         rclcpp::Node::SharedPtr rviz_node_; // ros node handler
         // -------------------------------------------------------
         std::vector<geometry_msgs::msg::PoseStamped> trajectory_;
+        // line style
         std::shared_ptr<rviz_rendering::BillboardLine> billboard_line_;
         Ogre::ManualObject* manual_line_;
         Ogre::MaterialPtr manual_line_material_;
-
-
+        // pose style
+        std::vector<rviz_rendering::Axes *> axes_list_;
+        std::vector<rviz_rendering::Arrow *> arrow_list_;
+        void allocateAxesVector(std::vector<rviz_rendering::Axes *> & axes_vect, size_t num);
+        void allocateArrowVector(std::vector<rviz_rendering::Arrow *> & arrow_vect, size_t num);
         // -------------------------------------------------------
         void updatePose(Ogre::Vector3 position, Ogre::Quaternion orientation, geometry_msgs::msg::Pose &pose);
-
         // -------------------------------------------------------
 
     };
