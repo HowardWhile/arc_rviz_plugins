@@ -119,6 +119,7 @@ namespace arc_rviz_plugins
 
         frame_property_->setFrameManager(context_->getFrameManager());
         this->billboard_line_ = std::make_shared<rviz_rendering::BillboardLine>(scene_manager_, scene_node_);
+        this->axes_array_ = std::make_shared<arc_rendering::AxesArray>(scene_manager_, scene_node_);
 
         // manual line initial
         this->manual_line_ = this->scene_manager_->createManualObject(); // 創建對象
@@ -386,7 +387,6 @@ namespace arc_rviz_plugins
         // Display trajectory pose
         // -------------------------------------------------------
         auto pose_style = static_cast<PoseStyle>(this->pose_style_property_->getOptionInt());
-        this->allocateAxesVector(this->axes_list_, 0);
         this->allocateArrowVector(this->arrow_list_, 0);
         switch (pose_style)
         {
@@ -394,19 +394,6 @@ namespace arc_rviz_plugins
             break;
         case AXES:
         {
-            auto num = this->trajectory_.size();
-            this->allocateAxesVector(this->axes_list_, num);
-            for (size_t idx = 0; idx < num; ++idx)
-            {
-                // update position
-                this->axes_list_[idx]->setPosition(rviz_common::pointMsgToOgre(this->trajectory_[idx].pose.position));
-
-                // update rotation
-                Ogre::Quaternion orientation(rviz_common::quaternionMsgToOgre(this->trajectory_[idx].pose.orientation));
-                this->axes_list_[idx]->setOrientation(orientation);
-            }
-
-            context_->queueRender();
         }
         break;
         case ARROWS:
@@ -424,31 +411,6 @@ namespace arc_rviz_plugins
             }
 
             break;
-        }
-    }
-
-    void TFTrajectoryDisplay::allocateAxesVector(std::vector<rviz_rendering::Axes *> &axes_vect, size_t num)
-    {
-        auto vector_size = axes_vect.size();
-        if (num > vector_size)
-        {
-            axes_vect.reserve(num);
-            for (auto i = vector_size; i < num; ++i)
-            {
-                axes_vect.push_back(
-                    new rviz_rendering::Axes(
-                        scene_manager_, scene_node_,
-                        pose_axes_length_property_->getFloat(),
-                        pose_axes_radius_property_->getFloat()));
-            }
-        }
-        else if (num < vector_size)
-        {
-            for (auto i = num; i < vector_size; ++i)
-            {
-                delete axes_vect[i];
-            }
-            axes_vect.resize(num);
         }
     }
 

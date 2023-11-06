@@ -1,6 +1,8 @@
 #ifndef ARC_RVIZ_PLUGINS_TF_TRAJECTORY_DISPLAY_H_
 #define ARC_RVIZ_PLUGINS_TF_TRAJECTORY_DISPLAY_H_
 
+#include "arc_rendering/axes_array.hpp"
+
 #ifndef Q_MOC_RUN
 #include <vector>
 #include <geometry_msgs/msg/point_stamped.hpp>
@@ -12,9 +14,7 @@
 #include <rviz_common/ros_topic_display.hpp>
 #include <rviz_rendering/objects/billboard_line.hpp>
 #include "rviz_rendering/material_manager.hpp"
-#include <rviz_rendering/objects/axes.hpp>
 #include <rviz_rendering/objects/arrow.hpp>
-
 #endif
 
 namespace arc_rviz_plugins
@@ -107,9 +107,11 @@ namespace arc_rviz_plugins
         Ogre::ManualObject *manual_line_;
         Ogre::MaterialPtr manual_line_material_;
         // pose style
-        std::vector<rviz_rendering::Axes *> axes_list_;
+        // axes
+        std::shared_ptr<arc_rendering::AxesArray> axes_array_;
+
+        // arrow
         std::vector<rviz_rendering::Arrow *> arrow_list_;
-        void allocateAxesVector(std::vector<rviz_rendering::Axes *> &axes_vect, size_t num);
         void allocateArrowVector(std::vector<rviz_rendering::Arrow *> &arrow_vect, size_t num);
         Ogre::ColourValue arrow_color_;
         Ogre::Vector3 arrow_direction_;
