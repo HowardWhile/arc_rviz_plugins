@@ -6,6 +6,8 @@
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 
+#include <rviz_common/msg_conversions.hpp>
+
 #include <OgreSceneManager.h>
 #include <OgreSceneNode.h>
 #include <OgreVector3.h>
@@ -20,8 +22,7 @@ namespace arc_rendering
     public:
         AxesArray(Ogre::SceneManager *scene_manager,
                   Ogre::SceneNode *parent_node = nullptr,
-                  float length = 1.0f,
-                  int radius = 1) // pixel
+                  float length = 1.0f) // pixel
         {
             this->scene_manager_ = scene_manager;
             if (!parent_node)
@@ -31,27 +32,9 @@ namespace arc_rendering
             scene_node_ = parent_node->createChildSceneNode();
 
             length_ = length;
-            radius_ = radius;
 
-            this->x_axes_lines_ = this->scene_manager_->createManualObject();
-            this->scene_node_->attachObject(this->x_axes_lines_);
-
-            // test
-            this->x_axes_lines_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST);
-
-            this->x_axes_lines_->position(Ogre::Vector3(0, 0, 0));
-            this->x_axes_lines_->colour(Ogre::ColourValue::Red);
-            this->x_axes_lines_->position(Ogre::Vector3(1, 0, 0));
-
-            this->x_axes_lines_->position(Ogre::Vector3(0, 0, 0));
-            this->x_axes_lines_->colour(Ogre::ColourValue::Green);
-            this->x_axes_lines_->position(Ogre::Vector3(0, 1, 0));
-
-            this->x_axes_lines_->position(Ogre::Vector3(0, 0, 0));
-            this->x_axes_lines_->colour(Ogre::ColourValue::Blue);
-            this->x_axes_lines_->position(Ogre::Vector3(0, 0, 1));
-            this->x_axes_lines_->end();
-            // this->x_axes_lines_->setRenderQueueGroup(Ogre::RENDER_QUEUE_OVERLAY);
+            this->manual_axes_ = this->scene_manager_->createManualObject();
+            this->scene_node_->attachObject(this->manual_axes_);
         }
 
         ~AxesArray()
@@ -72,20 +55,44 @@ namespace arc_rendering
         void setPoseArray(geometry_msgs::msg::PoseArray pose_array)
         {
             pose_array_ = pose_array;
+
+            this->manual_axes_->clear();
+            this->manual_axes_->estimateVertexCount(pose_array_.poses.size() * 2 * 3);
+            this->manual_axes_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST);
+            for (const auto &pose : pose_array.poses)
+            {
+                Ogre::Vector3 axis_origin = rviz_common::pointMsgToOgre(pose.position);                 // 軸的起始位置
+                Ogre::Quaternion axis_orientation = rviz_common::quaternionMsgToOgre(pose.orientation); // 軸的方向
+
+                // 繪製X軸
+                manual_axes_->position(axis_origin);
+                manual_axes_->colour(Ogre::ColourValue::Red);
+                manual_axes_->position(axis_origin + axis_orientation * Ogre::Vector3::UNIT_X * this->length_);
+
+                // 繪製X軸
+                manual_axes_->position(axis_origin);
+                manual_axes_->colour(Ogre::ColourValue::Green);
+                manual_axes_->position(axis_origin + axis_orientation * Ogre::Vector3::UNIT_Y * this->length_);
+
+                // 繪製X軸
+                manual_axes_->position(axis_origin);
+                manual_axes_->colour(Ogre::ColourValue::Blue);
+                manual_axes_->position(axis_origin + axis_orientation * Ogre::Vector3::UNIT_Z * this->length_);
+            }
+            this->manual_axes_->end();
+        }
+
+        void updateLength(float length)
+        {
+            this->length_ = length;
         }
 
     private:
         Ogre::SceneManager *scene_manager_;
         Ogre::SceneNode *scene_node_;
         float length_;
-        int radius_;
 
-        Ogre::ManualObject *x_axes_lines_;
-        Ogre::ManualObject *y_axes_lines_;
-        Ogre::ManualObject *z_axes_lines_;
-        Ogre::ColourValue x_axes_colour_;
-        Ogre::ColourValue y_axes_colour_;
-        Ogre::ColourValue z_axes_colour_;
+        Ogre::ManualObject *manual_axes_;
 
         geometry_msgs::msg::PoseArray pose_array_;
     };

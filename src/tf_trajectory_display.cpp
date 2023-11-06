@@ -220,6 +220,7 @@ namespace arc_rviz_plugins
     }
     void TFTrajectoryDisplay::updatePoseAxisGeometry()
     {
+        this->axes_array_->updateLength(this->pose_axes_length_property_->getFloat());
     }
 
     void TFTrajectoryDisplay::updatePoseArrowColor()
@@ -393,9 +394,8 @@ namespace arc_rviz_plugins
         case NONE:
             break;
         case AXES:
-        {
-        }
-        break;
+            this->axes_array_->setPoseArray(this->trajectory_);
+            break;
         case ARROWS:
             auto num = this->trajectory_.size();
             this->allocateArrowVector(this->arrow_list_, num);
