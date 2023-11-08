@@ -117,13 +117,8 @@ namespace arc_rviz_plugins
         this->axes_array_ = std::make_shared<arc_rendering::AxesArray>(scene_manager_, scene_node_);
 
         // manual line initial
-        this->manual_line_ = this->scene_manager_->createManualObject(); // 創建對象
-        this->scene_node_->attachObject(this->manual_line_);             // 將對象附加到場景節點
-
-        // 創建線的材質
-        static int count = 0;
-        std::string material_name = "arc_rviz_plugins::TFTrajectoryDisplay/LinesMaterial" + std::to_string(count++); // 材質名稱不能重複
-        this->manual_line_material_ = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
+        this->manual_line_ = this->scene_manager_->createManualObject(); // Create object
+        this->scene_node_->attachObject(this->manual_line_);             // Attach objects to scene nodes
 
         updateFrame();
         updateDuration();
@@ -169,7 +164,8 @@ namespace arc_rviz_plugins
 
     void TFTrajectoryDisplay::updateColor()
     {
-        line_color_ = line_color_property_->getColor();
+        line_q_color_ = line_color_property_->getColor();
+        line_o_color_ = line_color_property_->getOgreColor();
     }
 
     void TFTrajectoryDisplay::updateLineWidth()
@@ -316,7 +312,8 @@ namespace arc_rviz_plugins
         geometry_msgs::msg::PoseStamped new_pose;
         new_pose.header.frame_id = fixed_frame_id;
         new_pose.header.stamp = now;
-        this->updatePose(position, orientation, new_pose.pose);
+        new_pose.pose.position = rviz_common::pointOgreToMsg(position);
+        new_pose.pose.orientation = rviz_common::quaternionOgreToMsg(orientation);
 
         trajectory_.push_back(new_pose);
         for (std::vector<geometry_msgs::msg::PoseStamped>::iterator it = trajectory_.begin(); it != trajectory_.end();)
@@ -344,17 +341,15 @@ namespace arc_rviz_plugins
         {
             this->manual_line_->estimateVertexCount(trajectory_.size());
 
-            // 開始繪圖
-            this->manual_line_->begin(this->manual_line_material_->getName(), Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
-            auto tmp_color = this->line_color_property_->getOgreColor();
+            // Start drawing
+            this->manual_line_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
             for (const auto &pose_stamp : trajectory_)
             {
-                // 添加線段的頂點
+                // Add line segments
                 this->manual_line_->position(rviz_common::pointMsgToOgre(pose_stamp.pose.position));
-                rviz_rendering::MaterialManager::enableAlphaBlending(this->manual_line_material_, tmp_color.a);
-                this->manual_line_->colour(tmp_color);
+                this->manual_line_->colour(line_o_color_);
             }
-            // 結束繪圖
+            // End drawing
             this->manual_line_->end();
             break;
         }
@@ -363,7 +358,7 @@ namespace arc_rviz_plugins
             billboard_line_->setNumLines(1);
             billboard_line_->setMaxPointsPerLine(trajectory_.size());
             billboard_line_->setLineWidth(line_width_);
-            billboard_line_->setColor(line_color_.red() * 255.0, line_color_.green() * 255.0, line_color_.blue() * 255.0, 255.0);
+            billboard_line_->setColor(line_q_color_.red() * 255.0, line_q_color_.green() * 255.0, line_q_color_.blue() * 255.0, 255.0);
 
             for (const auto &pose_stamp : trajectory_)
             {

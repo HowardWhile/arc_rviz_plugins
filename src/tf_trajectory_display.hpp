@@ -39,7 +39,8 @@ namespace arc_rviz_plugins
         std::string frame_;
         std::string fixed_frame_;
         float duration_;
-        QColor line_color_;
+        QColor line_q_color_;
+        Ogre::ColourValue line_o_color_;
         float line_width_;
 
         rclcpp::Clock clock_;
@@ -104,7 +105,6 @@ namespace arc_rviz_plugins
         // line style
         std::shared_ptr<rviz_rendering::BillboardLine> billboard_line_;
         Ogre::ManualObject *manual_line_;
-        Ogre::MaterialPtr manual_line_material_;
         // pose style
         // axes
         std::shared_ptr<arc_rendering::AxesArray> axes_array_;
