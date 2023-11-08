@@ -50,10 +50,6 @@ namespace arc_rviz_plugins
             "Length", 0.05f,
             "Length of the axes.",
             this, SLOT(updatePoseAxisGeometry()));
-        pose_axes_radius_property_ = new rviz_common::properties::FloatProperty(
-            "Radius", 0.02f,
-            "Radius of the axes.",
-            this, SLOT(updatePoseAxisGeometry()));
 
         pose_arrow_color_property_ = new rviz_common::properties::ColorProperty(
             "Pose Color",
@@ -96,7 +92,6 @@ namespace arc_rviz_plugins
         pose_arrow_direction_property_->addOption("-Z", DIR_NZ);
 
         pose_axes_length_property_->hide();
-        pose_axes_radius_property_->hide();
         pose_arrow_color_property_->hide();
         pose_arrow_shaft_length_property_->hide();
         pose_arrow_head_length_property_->hide();
@@ -189,7 +184,6 @@ namespace arc_rviz_plugins
         {
         case AXES:
             pose_axes_length_property_->show();
-            pose_axes_radius_property_->show();
             pose_arrow_color_property_->hide();
             pose_arrow_shaft_length_property_->hide();
             pose_arrow_head_length_property_->hide();
@@ -199,7 +193,6 @@ namespace arc_rviz_plugins
             break;
         case ARROWS:
             pose_axes_length_property_->hide();
-            pose_axes_radius_property_->hide();
             pose_arrow_color_property_->show();
             pose_arrow_shaft_length_property_->show();
             pose_arrow_head_length_property_->show();
@@ -209,7 +202,6 @@ namespace arc_rviz_plugins
             break;
         default:
             pose_axes_length_property_->hide();
-            pose_axes_radius_property_->hide();
             pose_arrow_color_property_->hide();
             pose_arrow_shaft_length_property_->hide();
             pose_arrow_head_length_property_->hide();
@@ -394,6 +386,7 @@ namespace arc_rviz_plugins
         case NONE:
             break;
         case AXES:
+
             this->axes_array_->setPoseArray(this->trajectory_);
             break;
         case ARROWS:

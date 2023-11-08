@@ -75,7 +75,6 @@ namespace arc_rviz_plugins
         // pose marker property
         rviz_common::properties::EnumProperty *pose_style_property_;
         rviz_common::properties::FloatProperty *pose_axes_length_property_;
-        rviz_common::properties::FloatProperty *pose_axes_radius_property_;
         rviz_common::properties::ColorProperty *pose_arrow_color_property_;
         rviz_common::properties::FloatProperty *pose_arrow_shaft_length_property_;
         rviz_common::properties::FloatProperty *pose_arrow_head_length_property_;
